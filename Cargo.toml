@@ -1,0 +1,13 @@
+[package]
+name = "axum_session_streaming"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { version = "0.6.16", features = ["macros"] }
+axum-login = "0.5.0"
+axum-sessions = "0.5.0"
+futures-util = "0.3.28"
+tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread"] }
