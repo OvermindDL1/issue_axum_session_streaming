@@ -3,6 +3,7 @@ use axum::{routing::get, Router};
 use axum_login::memory_store::MemoryStore;
 use axum_login::secrecy::SecretVec;
 use axum_login::{AuthLayer, AuthUser};
+use axum_sessions::extractors::WritableSession;
 use axum_sessions::SessionLayer;
 use futures_util::{stream, Stream};
 
@@ -37,6 +38,7 @@ async fn main() {
 		.route("/stream", get(route_streaming_example))
 		.route("/login", get(route_streaming_login))
 		.route("/logout", get(route_logout))
+		.route("/session", get(route_session))
 		.layer(auth_layer)
 		.layer(session_layer);
 
@@ -69,8 +71,20 @@ async fn route_streaming_login(mut auth: AuthContext) -> StreamBody<impl Stream<
 	StreamBody::new(stream)
 }
 
-// Accessing it not in a stream works fine though:
+// Accessing it not in a stream works fine though
 async fn route_logout(mut auth: AuthContext) -> &'static str {
 	auth.logout().await;
 	"logged out"
+}
+
+// And interestingly discovered axum-sessions causes a freeze when the session is interacted with
+async fn route_session(mut session: WritableSession) -> StreamBody<impl Stream<Item = std::io::Result<&'static str>>> {
+	let stream = stream::once(async move {
+		// performing some long operation
+		tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+		// And need to access session 'later' in the stream
+		session.insert("test", 42).unwrap();
+		Ok("got session")
+	});
+	StreamBody::new(stream)
 }
